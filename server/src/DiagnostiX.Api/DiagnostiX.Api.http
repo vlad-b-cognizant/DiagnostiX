@@ -1,0 +1,6 @@
+@DiagnostiX.Api_HostAddress = http://localhost:5090
+
+GET {{DiagnostiX.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
