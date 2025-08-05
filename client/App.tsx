@@ -5,7 +5,7 @@
  * @format
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -16,8 +16,46 @@ import {
   useColorScheme,
 } from 'react-native';
 
+// API Configuration
+const API_BASE_URL = 'http://localhost:5090';
+
+// Types
+interface AppInfo {
+  appName: string;
+}
+
 function App(): JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
+  const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch app info from API
+  const fetchAppInfo = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`${API_BASE_URL}/api/home`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json() as AppInfo;
+      setAppInfo(data);
+    } catch (err) {
+      console.error('Failed to fetch app info:', err);
+      setError(err instanceof Error ? err.message : 'Failed to connect to server');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchAppInfo();
+  }, []);
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f5f5',
@@ -45,10 +83,22 @@ function App(): JSX.Element {
 
           <View style={styles.content}>
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>🎉 Hello World!</Text>
-              <Text style={styles.cardText}>
-                Welcome to DiagnostiX - your responsive web application built with React Native Web!
+              <Text style={styles.cardTitle}>
+                🎉 {loading ? 'Loading...' : error ? 'Connection Error' : (appInfo?.appName || 'Hello World!')}
               </Text>
+              <Text style={styles.cardText}>
+                {loading 
+                  ? 'Connecting to the server...' 
+                  : error 
+                    ? `Unable to connect to the API server: ${error}. Make sure the .NET 8 API is running at ${API_BASE_URL}`
+                    : `Welcome to DiagnostiX - your responsive web application built with React Native Web! Successfully connected to the .NET 8 API backend.`
+                }
+              </Text>
+              {error && (
+                <Text style={[styles.cardText, { marginTop: 10, fontStyle: 'italic' }]}>
+                  💡 Tip: Start the backend API by running "dotnet run --project src/DiagnostiX.Api" in the server directory.
+                </Text>
+              )}
             </View>
 
             <View style={styles.card}>
